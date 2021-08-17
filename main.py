@@ -6,6 +6,8 @@ from glob import glob
 from tensorflow.keras.layers import Dense, Input
 from tensorflow.keras.models import Model
 from tensorflow.keras.utils import plot_model
+import os
+# os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
 
 def load_data(folder):
@@ -46,14 +48,12 @@ def autoencoder_model(x_train, x_test):
     # 構建自編碼模型
     autoencoder = Model(inputs=input_img, outputs=decoded)
 
-
-
     # compile autoencoder
     autoencoder.compile(optimizer='adam', loss='mse')
     plot_model(autoencoder, 'autoencoder.png', show_shapes=True)
 
     # training
-    history = autoencoder.fit(x_train, x_train, epochs=20, batch_size=256, verbose=2, validation_data=(x_test, x_test))
+    history = autoencoder.fit(x_train, x_train, epochs=20, batch_size=8, verbose=1, validation_data=(x_test, x_test))
 
     # plotting
     plt.plot(history.history['loss'], label='train')
@@ -89,20 +89,7 @@ def generate_encoder_result(data):
     encoder = Model(inputs=input_img, outputs=encoder_output)
     encoder.load_weights("encoder.h5")
     result = encoder.predict(data)
-    print(result[:, 0].shape)
 
-    # plot predict data
-    # x_coord = [i for i in range(result.shape[1])]
-    # count = 0
-    # for i in range(result.shape[0]):
-    #     if i % 8 == 0:
-    #         count += 1
-    #     if count == 0:
-    #         color = [(1, 0, 0) for i in range(result.shape[1])]
-    #     elif count == 1:
-    #         color = [(0, 1, 0) for i in range(result.shape[1])]
-    #     else:
-    #         color = [(0, 0, 1) for i in range(result.shape[1])]
     color = []
     for i in range(8):
         color.append((1, 0, 0))
@@ -113,7 +100,6 @@ def generate_encoder_result(data):
     x_coord = [i for i in range(24)]
     for i in range(1000):
         plt.scatter(x_coord, result[:, i], c=color)
-    #
     plt.show()
 
 
@@ -177,6 +163,6 @@ if __name__ == "__main__":
 
     y_train, y_test = generate_label()
 
-    # autoencoder_model(x_train, x_test)
-    generate_encoder_result(x_train)
-    plot_original_data(x_train)
+    autoencoder_model(x_train, x_test)
+    # generate_encoder_result(x_train)
+    # plot_original_data(x_train)
