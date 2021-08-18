@@ -6,6 +6,8 @@ from glob import glob
 from tensorflow.keras.layers import Dense, Input
 from tensorflow.keras.models import Model
 from tensorflow.keras.utils import plot_model
+from tensorflow.keras.utils import to_categorical
+from sklearn.preprocessing import MinMaxScaler
 import os
 # os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
@@ -53,7 +55,7 @@ def autoencoder_model(x_train, x_test):
     plot_model(autoencoder, 'autoencoder.png', show_shapes=True)
 
     # training
-    history = autoencoder.fit(x_train, x_train, epochs=20, batch_size=8, verbose=1, validation_data=(x_test, x_test))
+    history = autoencoder.fit(x_train, x_train, epochs=20, batch_size=1, verbose=1, validation_data=(x_test, x_test))
 
     # plotting
     plt.plot(history.history['loss'], label='train')
@@ -143,13 +145,20 @@ def generate_label():
     return y_train, y_test
 
 
+def min_max_scale(data):
+    # MinMaxScaler
+    scaler = MinMaxScaler(feature_range=(0, 1))
+    data = scaler.fit_transform(data)
+    return data, scaler
+
+
 if __name__ == "__main__":
-    # ------------------------------declare file name variables----------------------------------------
+    # # ------------------------------declare file name variables----------------------------------------
     new_data_folder = "8000rpm_new_csv"
     final_data_folder = "8000rpm_final_csv"
     wear_data_folder = "8000rpm_wear_csv"
-
-    # --------------------------------------generate data----------------------------------------------
+    #
+    # # --------------------------------------generate data----------------------------------------------
     new_data = concat_data(generate_data_list(load_data(new_data_folder)))
     final_data = concat_data(generate_data_list(load_data(final_data_folder)))
     wear_data = concat_data(generate_data_list(load_data(wear_data_folder)))
@@ -161,8 +170,20 @@ if __name__ == "__main__":
                              final_data[int(10 * 0.8):, :],
                              wear_data[int(10 * 0.8):, :]), axis=0)
 
-    y_train, y_test = generate_label()
+    x_data = np.concatenate((x_train, x_test), axis=0)
+    x_data_after_scale, x_scaler = min_max_scale(x_data)
 
-    autoencoder_model(x_train, x_test)
+    x_train_after_scale = x_data_after_scale[:24, :]
+    print(x_train_after_scale.shape)
+    x_test_after_scale = x_data_after_scale[24:, :]
+    print(x_test_after_scale.shape)
+
+
+
+    # y_train, y_test = generate_label()
+    # y_train = to_categorical(y_train)
+
+
+    autoencoder_model(x_train_after_scale, x_test_after_scale)
     # generate_encoder_result(x_train)
     # plot_original_data(x_train)
